@@ -24,7 +24,7 @@ likelihood_defaults = {
     'aXprior': [3.,3.,3.],
     'nuisance': ['b1','smag'],
     'chenprior': False,
-    }
+    },
 'heft': {
     'kapNames': ['PR4','DR6'],
     'galNames': ['LRGz1','LRGz2','LRGz3','LRGz4'],
@@ -38,7 +38,7 @@ likelihood_defaults = {
     'a0prior': [50.,50.,50.,50.],
     'fidaX':  [0.,0.,0.,0.],
     'aXprior': [2.,2.,2.,2.],
-    'nuisance': ['b1','b2','bs','smag']
+    'nuisance': ['b1','b2','bs','smag'],
     'chenprior': True,
     }
 }
@@ -99,7 +99,7 @@ class ckg_cgg(InstallableLikelihood):
                 return np.array([kval]+[Pk(zz) for zz in z]).T
             self.settings = likelihood_defaults['linear']
         if self.model == 'heft':  # thy_args = [omb,omc,ns,ln10As,H0,Mnu,b1,b2,bs]
-            from .heft_emu import *
+            from .heft_emu import pgmHEFT, pggHEFT, pmmHEFT
             pgm, pgg, pmm = pgmHEFT, pggHEFT, pmmHEFT
             self.settings = likelihood_defaults['heft']
         
@@ -139,13 +139,13 @@ class ckg_cgg(InstallableLikelihood):
     # \checkmark
     def load_data(self):
         """Load the data."""
-        jsonpath = os.path.join(self.data_base_path, "data/lrg_cross_pr4+dr6.json"))
+        jsonpath = os.path.join(self.data_base_path, "data/lrg_cross_pr4+dr6.json")
         with open(jsonpath) as outfile: jsondata = json.load(outfile)
         keys = ['kapNames','galNames','amin','amax','xmin','xmax']
         kapNames,galNames,amin,amax,xmin,xmax = [self.settings[key] for key in keys]
         self.wla,self.wlx,self.data = pack_cl_wl(jsondata,kapNames,galNames,amin,amax,xmin,xmax)
         self.cov                    = pack_cov(  jsondata,kapNames,galNames,amin,amax,xmin,xmax)
-        dndzs     = [np.loadtxt(os.path.join(self.data_base_path, f"data/dNdz/{name}_dNdz.txt"))) for name in galNames]
+        dndzs     = [np.loadtxt(os.path.join(self.data_base_path, f"data/dNdz/{name}_dNdz.txt")) for name in galNames]
         self.dndz = pack_dndz(dndzs)
         self.pixwin = np.array(jsondata['pixwin'])
 
