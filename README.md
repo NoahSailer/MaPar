@@ -27,7 +27,7 @@ theory:
   classy: 
 
 likelihood:
-  MaPar.ckg_cgg.BGSLRG_PR4DR6:
+  MaPar.BGSLRG_PR4DR6:
     # OPTIONAL
     # listing defaults below
     model: linear # linear or heft
