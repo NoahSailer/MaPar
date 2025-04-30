@@ -6,6 +6,7 @@ from .gaussLike import gaussLike
 from .pack_data import pack_cl_wl,pack_cov,pack_dndz
 
 default_url = "https://zenodo.org/records/15307488/files/"
+default_dataset = "bgs+lrg_cross_pr4+dr6"
 default_file_root = "DESI-LRG_x_Planck-PR4_ACT-DR6"
 
 likelihood_defaults = {
@@ -60,7 +61,7 @@ class ckg_cgg(InstallableLikelihood):
     likelihood
     """
     install_options: dict = {
-        "download_url": f"{default_url}bgs+lrg_cross_pr4+dr6.tgz",
+        "download_url": f"{default_url}{default_dataset}.tgz",
         "data_path": default_file_root
     }
     def initialize(self):
@@ -139,13 +140,13 @@ class ckg_cgg(InstallableLikelihood):
     # \checkmark
     def load_data(self):
         """Load the data."""
-        jsonpath = os.path.join(self.data_base_path, "bgs+lrg_cross_pr4+dr6.json")
+        jsonpath = os.path.join(self.data_base_path, f"{default_dataset}/{default_dataset}.json")
         with open(jsonpath) as outfile: jsondata = json.load(outfile)
         keys = ['kapNames','galNames','amin','amax','xmin','xmax']
         kapNames,galNames,amin,amax,xmin,xmax = [self.settings[key] for key in keys]
         self.wla,self.wlx,self.data = pack_cl_wl(jsondata,kapNames,galNames,amin,amax,xmin,xmax)
         self.cov                    = pack_cov(  jsondata,kapNames,galNames,amin,amax,xmin,xmax)
-        dndzs     = [np.loadtxt(os.path.join(self.data_base_path, f"{name}_dNdz.txt")) for name in galNames]
+        dndzs     = [np.loadtxt(os.path.join(self.data_base_path, f"{default_dataset}/{name}_dNdz.txt")) for name in galNames]
         self.dndz = pack_dndz(dndzs)
         self.pixwin = np.array(jsondata['pixwin'])
 
