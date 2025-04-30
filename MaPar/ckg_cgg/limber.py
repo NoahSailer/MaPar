@@ -75,8 +75,8 @@ class limb():
       H = np.sqrt(OmM*(1+z)**3+(1-OmM)) 
       chi = np.cumsum(dz/H)
       chi = np.interp(self.z,z,chi-chi[0])
-      Wg  = np.interp(self.z,z,H)*self.dNdz[:,i]  
       def zeff(i):
+         Wg     = np.interp(self.z,z,H)*self.dNdz[:,i]
          denom  = np.trapz(Wg**2/chi**2,x=chi)
          numer  = np.trapz(Wg**2*self.z/chi**2,x=chi)
          return numer/denom

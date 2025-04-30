@@ -55,6 +55,7 @@ default_bias_priors = {
 smag_prior = lambda smag: {'dist': 'norm', 'loc': smag, 'scale': 0.1}
 
 kval = np.logspace(np.log10(0.005),np.log10(5.),200) #h/Mpc
+zinterp = np.linspace(0,1300,5000)
 
 class ckg_cgg(InstallableLikelihood):
     """
@@ -65,44 +66,49 @@ class ckg_cgg(InstallableLikelihood):
         "data_path": default_file_root
     }
     def initialize(self):
+        super().initialize()
         # 
-        if not (self.model in likelihood_defaults.keys()):
-            raise RuntimeError(f'model must be one of {likelihood_defaults.keys()}')
         if self.data_base_path is None:
             if self.packages_path:
                 self.data_base_path = self.get_path(self.packages_path)
             else:
                 self.data_base_path = os.path.abspath(os.path.dirname(__file__))
-        print("base path", self.data_base_path,flush=True)
-        # 
+        #print("base path", self.data_base_path,flush=True)
+        #
+        if not (self.model in likelihood_defaults.keys()):
+            raise RuntimeError(f'model must be one of {likelihood_defaults.keys()}')
+        self.settings = likelihood_defaults[self.model]
+        #
         def background(thy_args,zs):
-            pp  = self.provider
-            OmM = np.float(pp.get_Omega_b(0)+pp.get_Omega_cdm(0)+pp.get_Omega_nu_massive(0))
+            pp      = self.provider
             thermo  = pp.get_CLASS_thermodynamics()
+            bkgrnd  = pp.get_CLASS_background()
+            h       = bkgrnd['H [1/Mpc]'][-1]*2.99792458e3
             zstar   = thermo['z'][np.argmin(np.abs(np.array(thermo['x_e']) - 0.5))]
-            chistar = np.vectorize(pp.get_comoving_radial_distance)(zstar)*h
-            Ez  = np.vectorize(pp.get_Hubble)(zs)
+            chistar = np.interp(zstar,bkgrnd['z'][::-1],bkgrnd['comov. dist.'][::-1])*h
+            Ez  = np.interp(zs,bkgrnd['z'][::-1],bkgrnd['H [1/Mpc]'][::-1])
             Ez  = Ez/Ez[0]
-            chi = np.vectorize(pp.get_comoving_radial_distance)(zs)*h
+            chi = np.interp(zs,bkgrnd['z'][::-1],bkgrnd['comov. dist.'][::-1])*h
+            matter_keys = ['(.)rho_cdm','(.)rho_b']+[key for key in bkgrnd.keys() if 'rho_ncdm' in key]
+            OmM = sum([bkgrnd[key][-1] for key in matter_keys])/bkgrnd['(.)rho_crit'][-1]
             return OmM,chistar,Ez,chi
         def Pk(zz):
             pp    = self.provider
-            h     = np.float(pp.get_Hubble(0, units="km/s/Mpc")/100)
+            bkgrnd= pp.get_CLASS_background()
+            h     = bkgrnd['H [1/Mpc]'][-1]*2.99792458e3
             Pfunc = pp.get_Pk_interpolator()
-            return np.array([np.float(Pfunc.P(zz,kk*h,grid=False)*h**3) for kk in kval])
+            res = np.array([float(Pfunc.P(zz,kk*h,grid=False)*h**3) for kk in kval])
+            return np.array([float(Pfunc.P(zz,kk*h,grid=False)*h**3) for kk in kval])
         # 
-        self.settings = None
         if self.model == 'linear': # thy_args = [b1]
-            def pgm(thy_args,z): return np.array([kval,thy_args[0]*Pk(z)]).T
-            def pgg(thy_args,z): return np.array([kval,thy_args[0]**2*Pk(z)]).T
+            def pgm(thy_args,z): return np.array([kval,thy_args[0]*Pk(z),-0.5*kval**2*Pk(z)]).T
+            def pgg(thy_args,z): return np.array([kval,thy_args[0]**2*Pk(z),-0.5*kval**2*Pk(z)]).T
             def pmm(thy_args,z):
                 if isinstance(z, (np.floating, float)): return np.array([k,Pk(z)]).T
                 return np.array([kval]+[Pk(zz) for zz in z]).T
-            self.settings = likelihood_defaults['linear']
         if self.model == 'heft':  # thy_args = [omb,omc,ns,ln10As,H0,Mnu,b1,b2,bs]
             from .heft_emu import pgmHEFT, pggHEFT, pmmHEFT
             pgm, pgg, pmm = pgmHEFT, pggHEFT, pmmHEFT
-            self.settings = likelihood_defaults['heft']
         
         if self.custom: 
             self.settings = {
@@ -127,14 +133,14 @@ class ckg_cgg(InstallableLikelihood):
         self.clPred = limb(self.dndz, pgm, pgg, pmm, background, zmin=0.001, zmax=1.8, Nz=80)
         # set up priors for analytically marginalized parameters and Gaussian likelihood
         def template_priors(isamp):
-            a0 = self.fida0[isamp] ; a0p = self.a0prior[isamp]
-            SN = self.fidSN[isamp] ; SNp = self.snfrac*SN
-            aX = self.fidaX[isamp] ; aXp = self.aXprior[isamp]
+            a0 = self.settings['fida0'][isamp] ; a0p = self.settings['a0prior'][isamp]
+            SN = self.settings['fidSN'][isamp] ; SNp = self.snfrac*SN
+            aX = self.settings['fidaX'][isamp] ; aXp = self.settings['aXprior'][isamp]
             return [[a0,a0p],[SN,SNp],[aX,aXp]]
         tmp_priors = template_priors(0)
         for i in range(1,self.nsamp): tmp_priors += template_priors(i)
         self.tmp_priors = tmp_priors
-        print('Using template priors =',tmp_priors,flush=True)
+        #print('Using template priors =',tmp_priors,flush=True)
         self.glk = gaussLike(self.data, self.cov, tmp_priors=np.array(tmp_priors), jeffreys=self.jeffreys)
         
     # \checkmark
@@ -153,7 +159,9 @@ class ckg_cgg(InstallableLikelihood):
     # \checkmark
     def get_requirements(self):
         """What we require."""
-        reqs = {'CLASS_thermodynamics': None}
+        #reqs = {'CLASS_thermodynamics': None, 'Omega_b': {'z':[0]}, 'Omega_cdm':{'z':[0]}, 
+        #        'Omega_nu_massive': {'z':[0]}, 'Hubble': {'z':zinterp}, 'comoving_radial_distance': {'z':zinterp}}
+        reqs = {'CLASS_thermodynamics': None,'CLASS_background':None}
         if self.model == 'linear':
             reqs['Pk_interpolator'] = {'z':self.clPred.z, 
                                        'k_max':10., 
@@ -166,22 +174,7 @@ class ckg_cgg(InstallableLikelihood):
             reqs['ln1e10As']  = None
             reqs['H0']        = None
             reqs['m_ncdm']    = None
-        for suf in self.settings['galNames']:
-            for pref in self.settings['nuisance']:
-                reqs[pref+'_'+suf] = None
         return reqs
-        
-    # \checkmark
-    def get_parameter_defaults(self):
-        res = {}
-        for i,suf in enumerate(self.settings['galNames']):
-            for pref in self.settings['nuisance']:
-                if pref != 'smag': 
-                    res[pref+'_'+suf] = default_bias_priors[pref]
-                else: 
-                    smag_mean = self.settings['fidsmag'][i]
-                    res[pref+'_'+suf] = {'prior':smag_prior(smag_mean),'ref':smag_prior(smag_mean)}
-        return res
 
     # \checkmark
     def compute_full(self):
