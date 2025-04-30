@@ -1,5 +1,4 @@
 model: linear
-custom: false
 jeffreys: false
 maximize: false
 snfrac: 0.3
