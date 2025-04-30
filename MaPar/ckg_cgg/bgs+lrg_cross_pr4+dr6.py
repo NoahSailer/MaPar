@@ -57,7 +57,7 @@ smag_prior = lambda smag: {'dist': 'norm', 'loc': smag, 'scale': 0.1}
 kval = np.logspace(np.log10(0.005),np.log10(5.),200) #h/Mpc
 zinterp = np.linspace(0,1300,5000)
 
-class ckg_cgg(InstallableLikelihood):
+class BGSLRG_PR4DR6(InstallableLikelihood):
     """
     likelihood
     """

@@ -9,12 +9,15 @@ Chains, power spectra, window functions, covariance matrices and figure data are
 
 ## Usage in Cobaya
 
-Install the HEFT emulator, likelihood and associated data products with:
+Install the likelihood and associated data products with:
 ```
 conda activate cobaya
-python3 -m pip install -v git+https://github.com/AemulusProject/aemulus_heft
 python3 -m pip install -v git+https://github.com/NoahSailer/MaPar --user
-cobaya-install MaPar.ckg_cgg -p path/to/cobaya/packages
+cobaya-install MaPar.ckg_cgg.BGSLRG_PR4DR6 -p path/to/cobaya/packages
+```
+and optionally install the HEFT emulator with:
+```
+python3 -m pip install -v git+https://github.com/AemulusProject/aemulus_heft
 ```
 
 **Currently the likelihood is only compatible with `CLASS`**. Example usage:
@@ -24,7 +27,7 @@ theory:
   classy: 
 
 likelihood:
-  MaPar.ckg_cgg:
+  MaPar.ckg_cgg.BGSLRG_PR4DR6:
     # OPTIONAL
     # listing defaults below
     model: linear # linear or heft
