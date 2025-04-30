@@ -3,7 +3,7 @@ import numpy as np
 from copy import deepcopy
 from .ckg_cgg import likelihood_defaults,default_bias_priors,smag_prior
 
-output_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),"bgs+lrg_cross+pr4+dr6.yaml")
+output_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),"ckg_cgg.yaml")
 indict  = yaml.safe_load(open(output_file,'r'))
 model    = indict['model']
 galNames = likelihood_defaults[model]['galNames']
