@@ -13,7 +13,7 @@ Install the likelihood and associated data products with:
 ```
 conda activate cobaya
 python3 -m pip install -v git+https://github.com/NoahSailer/MaPar --user
-cobaya-install MaPar.ckg_cgg.BGSLRG_PR4DR6 -p path/to/cobaya/packages
+cobaya-install MaPar.BGSLRG_PR4DR6 -p path/to/cobaya/packages
 ```
 and optionally install the HEFT emulator with:
 ```
