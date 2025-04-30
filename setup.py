@@ -1,4 +1,8 @@
 import setuptools
+import os
+
+file_dir = os.path.abspath(os.path.dirname(__file__))
+os.chdir(file_dir)
 
 extensions = ['*.txt','*.dat','*.md','*.py','*.yaml']
 
@@ -13,7 +17,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/NoahSailer/MaPar",
     packages=['MaPar'],
-    package_data={'MaPar': extensions,'MaPar/ckg_cgg': extensions},
+    package_data={'MaPar': extensions},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
