@@ -78,6 +78,8 @@ class BGSLRG_PR4DR6(InstallableLikelihood):
         if not (self.model in likelihood_defaults.keys()):
             raise RuntimeError(f'model must be one of {likelihood_defaults.keys()}')
         self.settings = likelihood_defaults[self.model]
+        for atr in self.settings.keys():
+            if hasattr(self, atr): self.settings[atr] = getattr(self, atr)
         #
         def background(thy_args,zs):
             pp      = self.provider
@@ -109,23 +111,6 @@ class BGSLRG_PR4DR6(InstallableLikelihood):
         if self.model == 'heft':  # thy_args = [omb,omc,ns,ln10As,H0,Mnu,b1,b2,bs]
             from .heft_emu import pgmHEFT, pggHEFT, pmmHEFT
             pgm, pgg, pmm = pgmHEFT, pggHEFT, pmmHEFT
-        
-        if self.custom: 
-            self.settings = {
-            'kapNames': self.kapNames,
-            'galNames': self.galNames,
-            'amin': self.amin,
-            'amax': self.amax,
-            'xmin': self.xmin,
-            'xmax': self.xmax,
-            'fidSN': self.fidSN,
-            'fida0':  self.fida0,
-            'a0prior': self.a0prior,
-            'fidaX':  self.fidaX,
-            'aXprior': self.aXprior,
-            'nuisance': self.nuisance,
-            'chenprior': self.chenprior,
-            }        
         self.nsamp = len(self.settings['galNames']) 
         self.nkap  = len(self.settings['kapNames'])
         self.load_data()
