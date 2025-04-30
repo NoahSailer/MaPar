@@ -1,0 +1,4 @@
+model: linear
+custom: False
+jeffreys: False
+maximize: False
