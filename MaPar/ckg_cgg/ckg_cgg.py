@@ -174,10 +174,12 @@ class BGSLRG_PR4DR6(InstallableLikelihood):
             smag = self.provider.get_param(f'smag_{suf}')
             if self.model == 'linear': 
                 params = np.array([self.provider.get_param(f'b1_{suf}')])
+                b1 = params[0]
             if self.model == 'heft':
                 pars   = ['omega_b','omega_cdm','n_s','ln1e10As','H0',
                           'm_ncdm',f'b1_{suf}',f'b2_{suf}',f'bs_{suf}'] 
                 params = np.array([self.provider.get_param(p) for p in pars])
+                b1 = params[6]
             # Cgg and Ckg are tables of shape (nell,4)
             # where the four columns correspond to 
             # 1, alpha_auto, shot noise, alpha_cross
